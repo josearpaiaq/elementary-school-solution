@@ -2,13 +2,15 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// SQLite keeps local setup to `npm install`. For production switch to "postgresql".
+// DATABASE_URL is Neon's pooled connection (used by the app); DIRECT_URL is the
+// direct connection, used by `prisma migrate`.
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-// SQLite has no enums, so enum-like fields are strings; allowed values are noted inline.
+// Enum-like fields are strings; allowed values are noted inline.
 
 /// Anyone who can log in. Staff log in with their email, guardians and pickup people with their phone.
 model User {

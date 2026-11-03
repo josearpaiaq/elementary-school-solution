@@ -2,7 +2,7 @@
 
 100% web app for an elementary school to collect permission slips and control who picks up each student. Parents don't install anything: it works in the phone's browser.
 
-Stack: Next.js 14 (App Router) · TypeScript · Tailwind · Prisma + SQLite · Vitest.
+Stack: Next.js 14 (App Router) · TypeScript · Tailwind · Prisma + Postgres (Neon in production) · Vercel Blob · Vitest.
 
 ## Roles (RBAC)
 
@@ -20,14 +20,19 @@ RBAC lives in one place, `src/lib/rbac.ts`:
 
 ## Run locally
 
-Requirements: Node 20+. No Docker, no external services.
+Requirements: Node 20+ and Docker (for a local Postgres).
 
 ```bash
 cp .env.example .env
+docker compose up -d   # Postgres on localhost:5432 with databases "school" and "school_test"
 npm install
-npm run setup      # creates prisma/dev.db, applies migrations, seeds demo data and prints demo accounts
-npm run dev        # http://localhost:3000
+npm run setup          # applies migrations, seeds demo data and prints demo accounts
+npm run dev            # http://localhost:3000
 ```
+
+Without Docker, create two branches in Neon (e.g. `dev` and `test`), put the `dev` connection string in `DATABASE_URL` and `DIRECT_URL`, and set `TEST_DATABASE_URL` to the `test` one when running tests.
+
+Locally, photos are saved in `./storage`; with `BLOB_READ_WRITE_TOKEN` set they go to Vercel Blob.
 
 `npm run setup` wipes and reseeds the database; rerun it to start the demo over. It prints the demo accounts and an invitation code. Fixed ones:
 
@@ -55,7 +60,7 @@ Teachers `maestra1` … `maestra12` own 1°A, 1°B, 2°A … 6°B in that order.
 ### Checks
 
 ```bash
-npm test           # Vitest (uses a separate prisma/test.db)
+npm test           # Vitest, against the school_test database (or TEST_DATABASE_URL)
 npm run lint
 npm run typecheck
 ```
@@ -67,10 +72,51 @@ npm run typecheck
 - **Sessions.** HMAC-signed httpOnly cookie, 12 h.
 - **Photos.** Served only through `/api/photos/[id]` to users whose scope includes the student (or the person themself).
 
-## Deployment
+## Deploy to Vercel + Neon
 
-- **Vercel + managed Postgres** (Neon, Supabase…): change `provider = "sqlite"` to `"postgresql"` in `prisma/schema.prisma`, regenerate the migration, and set `DATABASE_URL`, `TOKEN_SECRET` and `BASE_URL`.
-- Photos are written to `./storage` on local disk. On serverless hosting, replace `src/lib/storage.ts` with an S3/R2 client.
+### 1. Neon
+
+1. Create a project at neon.tech (pick a region close to your Vercel region, e.g. `us-east-1`).
+2. In **Connect**, copy two connection strings for the `main` branch:
+   - **Pooled** (host contains `-pooler`) → `DATABASE_URL`
+   - **Direct** (toggle "Connection pooling" off) → `DIRECT_URL`
+
+### 2. Vercel
+
+1. **Add New → Project** and import the GitHub repository. Framework preset: Next.js (the defaults are fine).
+2. **Storage → Create → Blob**, and connect it to the project. This adds `BLOB_READ_WRITE_TOKEN`.
+3. **Settings → Environment Variables** (Production):
+
+   | Variable | Value |
+   |---|---|
+   | `DATABASE_URL` | Neon pooled connection string |
+   | `DIRECT_URL` | Neon direct connection string |
+   | `TOKEN_SECRET` | output of `openssl rand -base64 48` |
+   | `BASE_URL` | your production URL, e.g. `https://escuela.vercel.app` (no trailing slash) |
+   | `BLOB_READ_WRITE_TOKEN` | added by the Blob store |
+
+4. **Deploy.** Vercel runs `npm run vercel-build`, which applies the migrations (`prisma migrate deploy`) and builds the app. Later deploys apply new migrations the same way.
+
+If you change `BASE_URL` (e.g. to a custom domain), redeploy so QR codes and invitation slips use it.
+
+### 3. First accounts
+
+Don't run the demo seed in production: it deletes all data (the script refuses unless `BASE_URL` is local). Instead, from your machine, with `DATABASE_URL` and `DIRECT_URL` pointing to Neon:
+
+```bash
+npm run create-staff -- ADMIN coordinacion@escuela.mx "Sofía Ramírez"
+npm run create-staff -- TEACHER maestra.ana@escuela.mx "Ana López" "1°A,1°B"
+```
+
+The password is asked interactively. Running it again for the same email resets the password and reassigns classrooms.
+
+Then, in the app: **Importar** (CSV with students and guardians; classrooms are created if missing) → assign teachers with `create-staff` → **Invitaciones** per classroom.
+
+### Limits to keep in mind
+
+- Vercel caps request bodies at 4.5 MB. Photos are resized in the browser before upload, and the server rejects anything over 4 MB.
+- Blob photos are stored with unguessable URLs that are never sent to the browser; the app always serves them through `/api/photos/[id]` after checking access.
+- Neon's free tier suspends the database when idle, so the first request after a while can take a couple of seconds.
 
 ## Project layout
 
@@ -95,6 +141,7 @@ tests/             Vitest
 
 ## Assumptions
 
+- **Staff accounts are created with `npm run create-staff`;** there is no UI to manage teachers yet.
 - **Web only, no notifications.** Guardians must open the site to see requests and live pickup requests. The fallback is the guardian's phone, shown to the teacher. Push/email/SMS can be added later without changing the model.
 - A student is **authorized** if at least one guardian says yes and none says no; disagreement shows as **Conflicto**. Guardians can change their answer until the deadline.
 - **Paper slips** are recorded under the student's first guardian with channel `PAPER`.

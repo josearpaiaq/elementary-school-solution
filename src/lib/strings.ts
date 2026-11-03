@@ -155,7 +155,7 @@ export const t = {
     noAccount: "Sin cuenta",
     newCode: "Generar código de invitación",
     codeCreated: "Comparte este código con la persona. Solo se muestra una vez:",
-    invalidData: "Revisa los datos. La foto debe ser JPG, PNG o WEBP de máximo 5 MB.",
+    invalidData: "Revisa los datos. La foto debe ser JPG, PNG o WEBP de máximo 4 MB.",
     privacy:
       "Aviso de privacidad: estos datos solo los ve el personal de la escuela y tu familia, y se usan únicamente para entregas de alumnos.",
   },

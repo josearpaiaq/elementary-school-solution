@@ -33,7 +33,7 @@ export default async function PickupPage({ searchParams }: { searchParams: Searc
   const pass = passCredential ? await resolvePass(passCredential, user) : null;
   const results = q
     ? await prisma.student.findMany({
-        where: { AND: [scope, { name: { contains: q } }] },
+        where: { AND: [scope, { name: { contains: q, mode: "insensitive" } }] },
         include: { classroom: true },
         orderBy: { name: "asc" },
         take: 20,
