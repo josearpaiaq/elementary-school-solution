@@ -6,6 +6,30 @@ import { addPickupPerson, newPickupInvitation, updatePickupPerson, type PeopleSt
 import { t } from "@/lib/strings";
 import { btnPrimary, btnSecondary, input } from "@/lib/ui";
 
+const MAX_PHOTO_SIDE = 1280;
+
+/** Phone photos are often several MB, so they are resized to a JPEG before upload. */
+async function shrinkPhoto(event: React.ChangeEvent<HTMLInputElement>) {
+  const input = event.currentTarget;
+  const file = input.files?.[0];
+  if (!file) return;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_PHOTO_SIDE / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+    if (!blob) return;
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([blob], "photo.jpg", { type: "image/jpeg" }));
+    input.files = transfer.files;
+  } catch {
+    // Formats the browser can't decode are uploaded as-is; the server validates them.
+  }
+}
+
 function CodeNotice({ state }: { state: PeopleState }) {
   if (!state.code) return null;
   return (
@@ -58,7 +82,14 @@ export function PersonForm({ mode, childOptions, person }: PersonFormProps) {
       </label>
       <label className="block text-sm">
         {t.people.photo}
-        <input name="photo" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className={input} />
+        <input
+          name="photo"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          capture="environment"
+          onChange={shrinkPhoto}
+          className={input}
+        />
       </label>
       <fieldset>
         <legend className="text-sm">{t.people.children}</legend>

@@ -8,7 +8,8 @@ import { createInvitation } from "@/lib/invitations";
 import { normalizePhone } from "@/lib/phone";
 import { saveFile } from "@/lib/storage";
 
-const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+// Vercel rejects request bodies over 4.5 MB; the form also shrinks photos before upload.
+const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
 const PHOTO_EXTENSIONS: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 
 const personSchema = z.object({
