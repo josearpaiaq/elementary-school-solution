@@ -6,11 +6,11 @@ import { requireGuardian } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { createInvitation } from "@/lib/invitations";
 import { normalizePhone } from "@/lib/phone";
-import { saveFile } from "@/lib/storage";
+import { savePhoto } from "@/lib/photos";
 
 // Vercel rejects request bodies over 4.5 MB; the form also shrinks photos before upload.
 const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
-const PHOTO_EXTENSIONS: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const personSchema = z.object({
   name: z.string().trim().min(2).max(80),
@@ -26,11 +26,10 @@ export type PeopleState = { code?: string; personName?: string; error?: boolean 
 
 class InvalidInput extends Error {}
 
-async function savePhoto(file: FormDataEntryValue | null): Promise<string | undefined> {
+async function storeUpload(file: FormDataEntryValue | null): Promise<string | undefined> {
   if (!(file instanceof File) || file.size === 0) return undefined;
-  const ext = PHOTO_EXTENSIONS[file.type];
-  if (!ext || file.size > MAX_PHOTO_BYTES) throw new InvalidInput();
-  return saveFile(Buffer.from(await file.arrayBuffer()), ext);
+  if (!PHOTO_TYPES.includes(file.type) || file.size > MAX_PHOTO_BYTES) throw new InvalidInput();
+  return savePhoto(Buffer.from(await file.arrayBuffer()), file.type);
 }
 
 async function parsePerson(formData: FormData) {
@@ -40,7 +39,7 @@ async function parsePerson(formData: FormData) {
     phone: formData.get("phone") ?? "",
   });
   if (!parsed.success) throw new InvalidInput();
-  return { ...parsed.data, photoKey: await savePhoto(formData.get("photo")) };
+  return { ...parsed.data, photoId: await storeUpload(formData.get("photo")) };
 }
 
 /** The guardian's own children among the submitted ids; anything else is ignored. */
@@ -98,6 +97,8 @@ export async function updatePickupPerson(_: PeopleState, formData: FormData): Pr
     const { phone, ...data } = await parsePerson(formData);
     // Once the person has an account their phone is their login, so it can't change here.
     await prisma.pickupPerson.update({ where: { id: person.id }, data: person.userId ? data : { ...data, phone } });
+    // A new photo replaces the old one, which nothing else references.
+    if (data.photoId && person.photoId) await prisma.photo.delete({ where: { id: person.photoId } });
 
     // Only the guardian's own children are touched; other families' authorizations stay.
     const children = await prisma.studentGuardian.findMany({ where: { guardianId: guardian.id } });

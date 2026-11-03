@@ -32,7 +32,7 @@ export default async function PeoplePage() {
         return (
           <div key={person.id} className={`${card} space-y-3`}>
             <div className="flex items-center gap-3">
-              {person.photoKey ? (
+              {person.photoId ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={`/api/photos/${person.id}`} alt={person.name} className="h-20 w-20 rounded-lg object-cover" />
               ) : (

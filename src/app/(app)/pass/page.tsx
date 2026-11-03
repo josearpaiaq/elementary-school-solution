@@ -16,7 +16,7 @@ export default async function PassPage() {
     include: { classroom: true },
     orderBy: { name: "asc" },
   });
-  const photoPerson = await prisma.pickupPerson.findFirst({ where: { userId: user.id, photoKey: { not: null } } });
+  const photoPerson = await prisma.pickupPerson.findFirst({ where: { userId: user.id, photoId: { not: null } } });
 
   const url = `${process.env.BASE_URL ?? "http://localhost:3000"}/pickup?pass=${passToken(user.id)}`;
   const qr = await QRCode.toString(url, { type: "svg", margin: 1, width: 240 });

@@ -12,7 +12,6 @@ export default defineConfig({
       DIRECT_URL: TEST_DATABASE_URL,
       TOKEN_SECRET: "test-secret",
       BASE_URL: "http://localhost:3000",
-      BLOB_READ_WRITE_TOKEN: "",
     },
     globalSetup: "./tests/global-setup.ts",
     fileParallelism: false,

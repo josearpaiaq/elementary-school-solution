@@ -2,7 +2,7 @@ import type { Classroom, Guardian } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { createInvitation } from "@/lib/invitations";
 import { hashPassword } from "@/lib/password";
-import { saveFile } from "@/lib/storage";
+import { savePhoto } from "@/lib/photos";
 
 const FIRST_NAMES = ["Ana", "Luis", "Sofía", "Mateo", "Valentina", "Diego", "Camila", "Santiago", "Regina", "Emiliano", "Ximena", "Leonardo", "María", "Pablo", "Renata", "Andrés", "Fernanda", "Daniel", "Lucía", "Iker", "Paula"];
 const SURNAMES = ["García", "Hernández", "López", "Martínez", "González", "Pérez", "Rodríguez", "Sánchez", "Ramírez", "Torres", "Flores", "Rivera", "Gómez", "Díaz", "Cruz", "Morales", "Reyes", "Jiménez", "Ruiz", "Vargas", "Castillo", "Ortiz", "Mendoza"];
@@ -33,6 +33,7 @@ async function main() {
     prisma.permissionRequest.deleteMany(),
     prisma.pickupAuthorization.deleteMany(),
     prisma.pickupPerson.deleteMany(),
+    prisma.photo.deleteMany(),
     prisma.studentGuardian.deleteMany(),
     prisma.student.deleteMany(),
     prisma.guardian.deleteMany(),
@@ -119,7 +120,7 @@ async function main() {
             name,
             phone,
             relationship: pick(RELATIONSHIPS, i),
-            photoKey: await saveFile(Buffer.from(avatarSvg(name, (i * 47) % 360)), "svg"),
+            photoId: await savePhoto(Buffer.from(avatarSvg(name, (i * 47) % 360)), "image/svg+xml"),
             userId: user?.id,
             addedByGuardianId: primary.id,
             authorizations: { create: { studentId: student.id } },
