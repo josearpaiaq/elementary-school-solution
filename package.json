@@ -11,8 +11,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "setup": "prisma migrate reset --force",
-    "seed": "tsx prisma/seed.ts",
+    "setup": "tsx --env-file=.env scripts/assert-local-db.ts && prisma migrate reset --force",
+    "seed": "tsx --env-file=.env prisma/seed.ts",
     "create-staff": "tsx scripts/create-staff.ts"
   },
   "prisma": {

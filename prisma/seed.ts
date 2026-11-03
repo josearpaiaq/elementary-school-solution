@@ -1,3 +1,5 @@
+// The seed wipes every table, so it refuses to run against a non-local database.
+import "../scripts/assert-local-db";
 import type { Classroom, Guardian } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { createInvitation } from "@/lib/invitations";
@@ -18,12 +20,6 @@ function avatarSvg(name: string, hue: number): string {
 }
 
 async function main() {
-  // The seed wipes every table, so it only runs against a local app unless forced.
-  const baseUrl = process.env.BASE_URL ?? "http://localhost:3000";
-  if (!/^http:\/\/(localhost|127\.0\.0\.1)/.test(baseUrl) && !process.argv.includes("--force")) {
-    throw new Error(`Refusing to seed demo data for ${baseUrl}: it deletes all data. Pass --force to override.`);
-  }
-
   await prisma.$transaction([
     prisma.invitation.deleteMany(),
     prisma.pickupEvent.deleteMany(),
