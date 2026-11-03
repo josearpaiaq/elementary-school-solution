@@ -51,7 +51,7 @@ export default async function PickupPage({ searchParams }: { searchParams: Searc
       })
     : null;
   const approval = student ? await latestOpenApproval(student.id) : null;
-  const passPhoto = pass?.pickupPeople.find((p) => p.photoKey);
+  const passPhoto = pass?.pickupPeople.find((p) => p.photoId);
 
   return (
     <div className="mx-auto max-w-xl space-y-5">
@@ -178,7 +178,7 @@ export default async function PickupPage({ searchParams }: { searchParams: Searc
             <ul className="space-y-3">
               {student.pickupAuthorizations.map(({ pickupPerson: person }) => (
                 <li key={person.id} className="flex items-center gap-3">
-                  <Photo personId={person.photoKey ? person.id : undefined} name={person.name} />
+                  <Photo personId={person.photoId ? person.id : undefined} name={person.name} />
                   <div className="flex-1">
                     <p className="font-medium">{person.name}</p>
                     <p className="text-sm text-gray-600">{person.relationship}</p>

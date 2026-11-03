@@ -11,8 +11,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "setup": "prisma migrate reset --force",
-    "seed": "tsx prisma/seed.ts",
+    "setup": "tsx --env-file=.env scripts/assert-local-db.ts && prisma migrate reset --force",
+    "seed": "tsx --env-file=.env prisma/seed.ts",
     "create-staff": "tsx scripts/create-staff.ts"
   },
   "prisma": {
@@ -20,7 +20,6 @@
   },
   "dependencies": {
     "@prisma/client": "5.22.0",
-    "@vercel/blob": "^0.27.1",
     "next": "14.2.15",
     "qrcode": "^1.5.4",
     "react": "18.3.1",

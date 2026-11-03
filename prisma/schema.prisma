@@ -77,7 +77,8 @@ model PickupPerson {
   name              String
   relationship      String
   phone             String?
-  photoKey          String?
+  photoId           String?               @unique
+  photo             Photo?                @relation(fields: [photoId], references: [id], onDelete: SetNull)
   userId            String?
   user              User?                 @relation(fields: [userId], references: [id])
   addedByGuardianId String
@@ -86,6 +87,15 @@ model PickupPerson {
   authorizations    PickupAuthorization[]
   invitations       Invitation[]
   pickupEvents      PickupEvent[]
+}
+
+/// Image bytes live in their own table so loading a PickupPerson never pulls the photo.
+model Photo {
+  id           String        @id @default(cuid())
+  data         Bytes
+  contentType  String
+  createdAt    DateTime      @default(now())
+  pickupPerson PickupPerson?
 }
 
 model PickupAuthorization {
