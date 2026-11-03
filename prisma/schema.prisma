@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// SQLite keeps local setup to `npm install`. For production switch to "postgresql".
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SQLite has no enums, so enum-like fields are strings; allowed values are noted inline.
+
+/// Anyone who can log in. Staff log in with their email, guardians and pickup people with their phone.
+model User {
+  id              String           @id @default(cuid())
+  login           String           @unique
+  name            String
+  passwordHash    String
+  role            String // ADMIN | TEACHER | GUARDIAN | PICKUP
+  createdAt       DateTime         @default(now())
+  classrooms      Classroom[]
+  guardian        Guardian?
+  pickupPeople    PickupPerson[]
+  pickupApprovals PickupApproval[]
+  pickupEvents    PickupEvent[]
+  invitations     Invitation[]
+}
+
+model Classroom {
+  id        String             @id @default(cuid())
+  name      String             @unique
+  teacherId String?
+  teacher   User?              @relation(fields: [teacherId], references: [id])
+  students  Student[]
+  requests  RequestClassroom[]
+}
+
+model Student {
+  id                   String                @id @default(cuid())
+  name                 String
+  classroomId          String
+  classroom            Classroom             @relation(fields: [classroomId], references: [id])
+  guardians            StudentGuardian[]
+  pickupAuthorizations PickupAuthorization[]
+  responses            PermissionResponse[]
+  pickupApprovals      PickupApproval[]
+  pickupEvents         PickupEvent[]
+}
+
+model Guardian {
+  id                String               @id @default(cuid())
+  name              String
+  phone             String               @unique // E.164, e.g. +525512345678
+  userId            String?              @unique
+  user              User?                @relation(fields: [userId], references: [id])
+  students          StudentGuardian[]
+  responses         PermissionResponse[]
+  pickupPeopleAdded PickupPerson[]
+  approvalsAnswered PickupApproval[]
+  invitations       Invitation[]
+}
+
+model StudentGuardian {
+  studentId  String
+  guardianId String
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  guardian   Guardian @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+
+  @@id([studentId, guardianId])
+}
+
+/// A person a guardian trusts to pick up one or more of their children.
+model PickupPerson {
+  id                String                @id @default(cuid())
+  name              String
+  relationship      String
+  phone             String?
+  photoKey          String?
+  userId            String?
+  user              User?                 @relation(fields: [userId], references: [id])
+  addedByGuardianId String
+  addedByGuardian   Guardian              @relation(fields: [addedByGuardianId], references: [id], onDelete: Cascade)
+  createdAt         DateTime              @default(now())
+  authorizations    PickupAuthorization[]
+  invitations       Invitation[]
+  pickupEvents      PickupEvent[]
+}
+
+model PickupAuthorization {
+  pickupPersonId String
+  studentId      String
+  pickupPerson   PickupPerson @relation(fields: [pickupPersonId], references: [id], onDelete: Cascade)
+  student        Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([pickupPersonId, studentId])
+}
+
+/// One-time code that lets a guardian or pickup person create their account.
+model Invitation {
+  id             String        @id @default(cuid())
+  codeHash       String        @unique
+  role           String // GUARDIAN | PICKUP
+  guardianId     String?
+  guardian       Guardian?     @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+  pickupPersonId String?
+  pickupPerson   PickupPerson? @relation(fields: [pickupPersonId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User          @relation(fields: [createdById], references: [id])
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdAt      DateTime      @default(now())
+}
+
+model PermissionRequest {
+  id          String               @id @default(cuid())
+  title       String
+  description String
+  eventDate   DateTime
+  deadline    DateTime
+  status      String               @default("DRAFT") // DRAFT | OPEN | CLOSED
+  publishedAt DateTime?
+  createdAt   DateTime             @default(now())
+  classrooms  RequestClassroom[]
+  responses   PermissionResponse[]
+}
+
+model RequestClassroom {
+  requestId   String
+  classroomId String
+  request     PermissionRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  classroom   Classroom         @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+
+  @@id([requestId, classroomId])
+}
+
+model PermissionResponse {
+  id          String            @id @default(cuid())
+  requestId   String
+  studentId   String
+  guardianId  String
+  request     PermissionRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  student     Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  guardian    Guardian          @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+  decision    String // AUTHORIZED | DENIED
+  channel     String            @default("WEB") // WEB | PAPER
+  respondedAt DateTime          @default(now())
+
+  @@unique([requestId, studentId, guardianId])
+}
+
+model PickupApproval {
+  id                    String    @id @default(cuid())
+  studentId             String
+  student               Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  personName            String
+  teacherId             String
+  teacher               User      @relation(fields: [teacherId], references: [id])
+  status                String    @default("PENDING") // PENDING | APPROVED | REJECTED | EXPIRED
+  respondedByGuardianId String?
+  respondedByGuardian   Guardian? @relation(fields: [respondedByGuardianId], references: [id])
+  respondedAt           DateTime?
+  completedAt           DateTime?
+  createdAt             DateTime  @default(now())
+}
+
+model PickupEvent {
+  id             String        @id @default(cuid())
+  studentId      String
+  student        Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  personName     String
+  pickupPersonId String?
+  pickupPerson   PickupPerson? @relation(fields: [pickupPersonId], references: [id], onDelete: SetNull)
+  method         String // MANUAL | PASS | LIVE_APPROVAL
+  teacherId      String
+  teacher        User          @relation(fields: [teacherId], references: [id])
+  createdAt      DateTime      @default(now())
+}
