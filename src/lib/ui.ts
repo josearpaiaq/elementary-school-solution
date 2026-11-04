@@ -5,5 +5,6 @@ const btn =
 export const btnPrimary = `${btn} bg-blue-700 text-white hover:bg-blue-800`;
 export const btnSecondary = `${btn} border border-gray-300 bg-white text-gray-900 hover:bg-gray-100`;
 export const btnSuccess = `${btn} bg-green-700 text-white hover:bg-green-800`;
+export const btnWhatsApp = `${btn} bg-[#25D366] text-gray-900 hover:bg-[#1ebe5b]`;
 export const btnDanger = `${btn} bg-red-700 text-white hover:bg-red-800`;
 export const card = "rounded-lg border border-gray-200 bg-white p-4";

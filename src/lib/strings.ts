@@ -87,6 +87,20 @@ export const t = {
     paper: "papel",
     event: "Evento",
   },
+  reminder: {
+    button: "Recordar en WhatsApp",
+    hint: "Abre WhatsApp con un mensaje listo para el grupo del salón. No incluye nombres.",
+    last: (when: string, by: string, pending: number, answered: number) =>
+      `Último recordatorio: ${when} por ${by} · faltaban ${pending} → ${answered} respondieron después`,
+    message: (r: { classroom: string; pending: number; total: number; title: string; eventDate: string; deadline: string; url: string }) =>
+      [
+        `📋 Recordatorio ${r.classroom}`,
+        `Faltan ${r.pending} de ${r.total} autorizaciones para *${r.title}* (${r.eventDate}).`,
+        `Fecha límite: ${r.deadline}`,
+        `Autoricen aquí desde su celular: ${r.url}`,
+        "Si ya respondieron, ¡gracias! 🙌",
+      ].join("\n"),
+  },
   pickup: {
     title: "Recogida",
     passTitle: "Validar pase",
