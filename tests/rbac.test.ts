@@ -7,6 +7,7 @@ describe("permission matrix", () => {
     "requests:manage": ["ADMIN"],
     "requests:view": ["ADMIN", "TEACHER"],
     "requests:recordPaper": ["ADMIN", "TEACHER"],
+    "requests:remind": ["ADMIN", "TEACHER"],
     "requests:answer": ["GUARDIAN"],
     "students:import": ["ADMIN"],
     "invitations:guardians": ["ADMIN", "TEACHER"],

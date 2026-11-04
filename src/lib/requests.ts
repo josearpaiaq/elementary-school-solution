@@ -2,6 +2,7 @@ import type { User } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { studentStatus, type StudentStatus } from "@/lib/permissions";
 import { classroomScope } from "@/lib/rbac";
+import { answeredAfter } from "@/lib/reminders";
 
 const EMPTY_COUNTS: Record<StudentStatus, number> = { AUTHORIZED: 0, DENIED: 0, PENDING: 0, CONFLICT: 0 };
 
@@ -10,6 +11,7 @@ export async function getRequestReport(requestId: string, user: User) {
   const request = await prisma.permissionRequest.findUnique({
     where: { id: requestId },
     include: {
+      groupReminders: { orderBy: { createdAt: "desc" }, include: { sentBy: { select: { name: true } } } },
       classrooms: {
         where: { classroom: classroomScope(user) },
         include: {
@@ -40,7 +42,12 @@ export async function getRequestReport(requestId: string, user: User) {
       }));
       const counts = { ...EMPTY_COUNTS };
       for (const s of students) counts[s.status]++;
-      return { ...classroom, students, counts };
+      const reminder = request.groupReminders.find((r) => r.classroomId === classroom.id);
+      const lastReminder = reminder && {
+        ...reminder,
+        answeredAfter: answeredAfter(reminder.createdAt, students.flatMap((s) => s.responses)),
+      };
+      return { ...classroom, students, counts, lastReminder };
     });
 
   return { request, classrooms };

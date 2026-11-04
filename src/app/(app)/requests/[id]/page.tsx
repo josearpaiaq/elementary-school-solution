@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
-import { closeRequest, markPaper, publishRequest } from "@/app/actions/requests";
+import { closeRequest, markPaper, publishRequest, remindClassroom } from "@/app/actions/requests";
 import { StatusBadge } from "@/components/StatusBadge";
 import { requirePermission } from "@/lib/auth";
 import type { RequestStatus, StudentStatus } from "@/lib/permissions";
 import { can } from "@/lib/rbac";
 import { getRequestReport } from "@/lib/requests";
 import { formatDate, t } from "@/lib/strings";
-import { btnPrimary, btnSecondary, card } from "@/lib/ui";
+import { btnPrimary, btnSecondary, btnWhatsApp, card } from "@/lib/ui";
 
 const STATUSES: StudentStatus[] = ["AUTHORIZED", "DENIED", "PENDING", "CONFLICT"];
 
@@ -17,6 +17,7 @@ export default async function RequestPage({ params }: { params: { id: string } }
   const { request, classrooms } = report;
   const canManage = can(user.role, "requests:manage");
   const canRecordPaper = can(user.role, "requests:recordPaper") && request.status === "OPEN";
+  const canRemind = can(user.role, "requests:remind") && request.status === "OPEN";
   const paperButton = "rounded border border-gray-300 px-2 py-0.5 text-xs hover:bg-gray-100";
 
   return (
@@ -76,7 +77,26 @@ export default async function RequestPage({ params }: { params: { id: string } }
 
       {classrooms.map((c) => (
         <section key={c.id} className="space-y-2">
-          <h2 className="text-lg font-semibold">{c.name}</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold">{c.name}</h2>
+            {canRemind && c.counts.PENDING > 0 && (
+              <form action={remindClassroom.bind(null, request.id, c.id)}>
+                <button className={btnWhatsApp} title={t.reminder.hint}>
+                  {t.reminder.button} ({c.counts.PENDING})
+                </button>
+              </form>
+            )}
+          </div>
+          {c.lastReminder && (
+            <p className="text-xs text-gray-600">
+              {t.reminder.last(
+                formatDate(c.lastReminder.createdAt),
+                c.lastReminder.sentBy.name,
+                c.lastReminder.pendingCount,
+                c.lastReminder.answeredAfter,
+              )}
+            </p>
+          )}
           <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white">
             {c.students.map((s) => (
               <li key={s.id} className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">

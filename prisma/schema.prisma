@@ -26,15 +26,17 @@ model User {
   pickupApprovals PickupApproval[]
   pickupEvents    PickupEvent[]
   invitations     Invitation[]
+  groupReminders  GroupReminder[]
 }
 
 model Classroom {
-  id        String             @id @default(cuid())
-  name      String             @unique
-  teacherId String?
-  teacher   User?              @relation(fields: [teacherId], references: [id])
-  students  Student[]
-  requests  RequestClassroom[]
+  id             String             @id @default(cuid())
+  name           String             @unique
+  teacherId      String?
+  teacher        User?              @relation(fields: [teacherId], references: [id])
+  students       Student[]
+  requests       RequestClassroom[]
+  groupReminders GroupReminder[]
 }
 
 model Student {
@@ -124,16 +126,17 @@ model Invitation {
 }
 
 model PermissionRequest {
-  id          String               @id @default(cuid())
-  title       String
-  description String
-  eventDate   DateTime
-  deadline    DateTime
-  status      String               @default("DRAFT") // DRAFT | OPEN | CLOSED
-  publishedAt DateTime?
-  createdAt   DateTime             @default(now())
-  classrooms  RequestClassroom[]
-  responses   PermissionResponse[]
+  id             String               @id @default(cuid())
+  title          String
+  description    String
+  eventDate      DateTime
+  deadline       DateTime
+  status         String               @default("DRAFT") // DRAFT | OPEN | CLOSED
+  publishedAt    DateTime?
+  createdAt      DateTime             @default(now())
+  classrooms     RequestClassroom[]
+  responses      PermissionResponse[]
+  groupReminders GroupReminder[]
 }
 
 model RequestClassroom {
@@ -186,4 +189,19 @@ model PickupEvent {
   teacherId      String
   teacher        User          @relation(fields: [teacherId], references: [id])
   createdAt      DateTime      @default(now())
+}
+
+/// A reminder a staff member posted to a classroom's WhatsApp group; used to measure follow-up.
+model GroupReminder {
+  id           String            @id @default(cuid())
+  requestId    String
+  classroomId  String
+  sentById     String
+  request      PermissionRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  classroom    Classroom         @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  sentBy       User              @relation(fields: [sentById], references: [id])
+  pendingCount Int
+  createdAt    DateTime          @default(now())
+
+  @@index([requestId, classroomId, createdAt])
 }

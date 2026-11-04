@@ -6,6 +6,8 @@ import { z } from "zod";
 import { canAccessStudent, requireGuardian, requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { canRespond } from "@/lib/permissions";
+import { groupReminderText, whatsappShareUrl } from "@/lib/reminders";
+import { getRequestReport } from "@/lib/requests";
 
 const requestSchema = z
   .object({
@@ -80,4 +82,24 @@ export async function answerRequest(requestId: string, studentId: string, decisi
     update: { decision, channel: "WEB", respondedAt: new Date() },
   });
   revalidatePath("/family");
+}
+
+/** Logs a reminder for one classroom and opens WhatsApp with the group message. */
+export async function remindClassroom(requestId: string, classroomId: string) {
+  const user = await requirePermission("requests:remind");
+  const report = await getRequestReport(requestId, user);
+  const classroom = report?.classrooms.find((c) => c.id === classroomId);
+  if (!report || !classroom || report.request.status !== "OPEN") throw new Error("Forbidden");
+
+  // Counted again on the server so the message matches the data at the moment of sending.
+  const pending = classroom.counts.PENDING;
+  await prisma.groupReminder.create({ data: { requestId, classroomId, sentById: user.id, pendingCount: pending } });
+  const text = groupReminderText({
+    classroom: classroom.name,
+    pending,
+    total: classroom.students.length,
+    request: report.request,
+    baseUrl: process.env.BASE_URL ?? "http://localhost:3000",
+  });
+  redirect(whatsappShareUrl(text));
 }

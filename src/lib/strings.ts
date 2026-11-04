@@ -12,6 +12,41 @@ export function formatDate(date: Date): string {
 
 export const t = {
   appName: "Autorizaciones escolares",
+  landing: {
+    eyebrow: "Para primarias que ya viven en WhatsApp",
+    title: "Autorizaciones firmadas y entregas seguras, sin papel y sin instalar apps",
+    subtitle:
+      "Los papás autorizan salidas y vacunas desde el celular, las maestras recuerdan en el grupo del salón con un toque, y en la puerta saben quién puede recoger a cada niño.",
+    login: "Iniciar sesión",
+    activate: "Tengo un código de invitación",
+    problemTitle: "El problema que resolvemos",
+    problems: [
+      "Las autorizaciones en papel se pierden en las mochilas.",
+      "El día del evento faltan firmas y hay que llamar uno por uno.",
+      "En la salida nadie sabe si la persona que llegó puede llevarse al niño.",
+    ],
+    featuresTitle: "Cómo ayuda",
+    features: [
+      { title: "Autorizaciones en línea", body: "Salidas, vacunas y eventos. Cada familia autoriza en menos de un minuto y queda registrado quién y cuándo." },
+      { title: "Recordatorio al grupo de WhatsApp", body: "Un botón por salón abre WhatsApp con el mensaje listo: cuántos faltan y el enlace. Sin nombres, sin API." },
+      { title: "Pase de recogida con QR", body: "Abuelos, tíos o niñeras muestran un QR o un código que cambia cada 5 minutos. La maestra lo valida en la puerta." },
+      { title: "Aprobación en vivo", body: "¿Llegó alguien no registrado? El tutor lo autoriza o rechaza desde su celular, y la maestra lo ve al instante." },
+    ],
+    stepsTitle: "Empiezas el mismo día",
+    steps: [
+      "Importa tu lista de alumnos y tutores desde un CSV.",
+      "Imprime o comparte los códigos de invitación por salón.",
+      "Publica la primera autorización y recuérdala en el grupo.",
+    ],
+    rolesTitle: "Cada quien ve solo lo suyo",
+    roles: [
+      { name: "Coordinación", body: "Todas las autorizaciones, salones e invitaciones." },
+      { name: "Maestras", body: "Solo sus salones: pendientes, recordatorios y entregas." },
+      { name: "Tutores", body: "Solo sus hijos: firmar, autorizar recogidas y su pase." },
+      { name: "Personas autorizadas", body: "Solo su pase y los niños que pueden recoger." },
+    ],
+    footer: "Calificaciones y tareas se quedan en tu sistema actual: esto se encarga de autorizaciones y entregas.",
+  },
   roles: { ADMIN: "Coordinación", TEACHER: "Maestra", GUARDIAN: "Tutor", PICKUP: "Persona autorizada" },
   nav: {
     requests: "Autorizaciones",
@@ -86,6 +121,20 @@ export const t = {
     noAccount: "sin cuenta",
     paper: "papel",
     event: "Evento",
+  },
+  reminder: {
+    button: "Recordar en WhatsApp",
+    hint: "Abre WhatsApp con un mensaje listo para el grupo del salón. No incluye nombres.",
+    last: (when: string, by: string, pending: number, answered: number) =>
+      `Último recordatorio: ${when} por ${by} · faltaban ${pending} → ${answered} respondieron después`,
+    message: (r: { classroom: string; pending: number; total: number; title: string; eventDate: string; deadline: string; url: string }) =>
+      [
+        `📋 Recordatorio ${r.classroom}`,
+        `Faltan ${r.pending} de ${r.total} autorizaciones para *${r.title}* (${r.eventDate}).`,
+        `Fecha límite: ${r.deadline}`,
+        `Autoricen aquí desde su celular: ${r.url}`,
+        "Si ya respondieron, ¡gracias! 🙌",
+      ].join("\n"),
   },
   pickup: {
     title: "Recogida",

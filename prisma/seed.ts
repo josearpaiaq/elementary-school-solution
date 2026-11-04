@@ -21,6 +21,7 @@ function avatarSvg(name: string, hue: number): string {
 
 async function main() {
   await prisma.$transaction([
+    prisma.groupReminder.deleteMany(),
     prisma.invitation.deleteMany(),
     prisma.pickupEvent.deleteMany(),
     prisma.pickupApproval.deleteMany(),

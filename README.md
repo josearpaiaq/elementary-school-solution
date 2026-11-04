@@ -4,6 +4,8 @@
 
 Stack: Next.js 14 (App Router) · TypeScript · Tailwind · Prisma + Postgres (Neon in production) · Vitest.
 
+Product docs: [ICP and user persona](docs/ICP.md) · [SPEC: WhatsApp group reminder](docs/specs/recordatorio-grupo-whatsapp.md).
+
 ## Roles (RBAC)
 
 | Role | Logs in with | Can |
@@ -55,7 +57,8 @@ Teachers `maestra1` … `maestra12` own 1°A, 1°B, 2°A … 6°B in that order.
 4. **Pickup pass.** As the pickup person (or a guardian), open **Mi pase**: a QR and a 6-digit code that changes every 5 minutes.
 5. **Hand-over.** As the 3°A teacher, go to **Recogida** → **Validar pase** with the 6-digit code (or scan the QR with the phone camera, which opens the same page) → **Entregar**. A teacher from another classroom gets "pase no válido".
 6. **Unregistered person.** On the student's card → "Llegó una persona no registrada" → **Pedir autorización al tutor**. It shows up on the guardian's dashboard (refreshes every 10 s). The teacher screen updates every 3 s. Any "No" wins, it expires after 15 min, and the guardian's phone is shown for a call.
-7. **Invitations.** As admin or teacher, **Invitaciones** → choose a classroom → printable slips with codes for guardians without an account.
+7. **WhatsApp group reminder.** On a request's report, each classroom with pending students has **Recordar en WhatsApp**: it opens WhatsApp with a message for the classroom group (counts only, no names) and logs the reminder; the report then shows how many answered after it.
+8. **Invitations.** As admin or teacher, **Invitaciones** → choose a classroom → printable slips with codes for guardians without an account.
 
 ### Checks
 
